@@ -1,0 +1,230 @@
+# AML End-to-End Pipeline: Simulación y procesamiento de Datos
+
+Este proyecto genera un conjunto de datos sintéticos (DataFrames de Pandas) que simula transacciones financieras y perfiles de usuarios. Estos datos están diseñados como la capa de origen (Bronze Layer) para un pipeline analítico en herramientas como Databricks y bases de datos transaccionales como Azure SQL.
+
+## Arquitectura y Estructura del Repositorio
+
+El repositorio sigue un diseño modular por capas alineado con la arquitectura medallón y la automatización continua (CI/CD):
+
+```text
+├── .github/
+│   └── workflows/
+│       └── aml_pipeline.yml      # Automatización CI/CD con GitHub Actions (ejecución programada)
+├── capa_bronze/                  # Generación y simulación de datos sintéticos (Raw Data)
+│   ├── clases_actores.py         # Modelado POO de perfiles legítimos y patrones de lavado de dinero
+│   ├── config.py                 # Parámetros generales y configuración de la simulación
+│   ├── data_quality.py           # Inyección controlada de anomalías y datos sucios (15%)
+│   ├── db_connection.py          # Conector y carga de datos hacia Azure SQL Database
+│   ├── main.py                   # Orquestador principal de generación y persistencia
+│   └── requirements.txt          # Dependencias de Python para la capa bronce
+├── capa_silver/                  # Limpieza, estandarización y transformación Delta Lake
+│   └── capa_plata_AML.ipynb      # Notebook de PySpark para la capa plata
+├── capa_gold/                    # Detección de anomalías, Machine Learning y Reglas AML
+│   └── capa_oro_AML.ipynb        # Notebook de PySpark y Delta Lake para Databricks
+├── reporte/                      # Reportes de trazabilidad y arquitectura interactivos
+│   └── databricks_aml_gold_analysis.ipynb # Dashboard interactivo (Plotly) y Data Lineage
+├── .gitignore                    # Exclusiones de control de versiones
+└── README.md                     # Documentación integral del proyecto
+```
+
+## Arquitectura de Datos (Esquema Estrella)
+
+El modelo dimensional está compuesto por:
+
+1. **Dim_Cliente:** Tabla de dimensiones con datos demográficos (Edad, Ocupación y un ingreso aproximado).
+2. **Fact_Transacciones:** Tabla de hechos con los eventos transaccionales, orígenes, destinos y geografía.
+
+## Estructura Orientada a Objetos (POO)
+
+El proyecto utiliza una clase base `PerfilFinanciero` en `capa_bronze/clases_actores.py` de la que heredan:
+- `ClienteNormal`: Tráfico y compras legítimas ("ruido blanco" o camuflaje).
+- `PitufoBancario`: Fracciona montos ilícitos (Structuring) en días consecutivos en efectivo.
+- `LavadorPlataformas`: Recibe múltiples micro-pagos de varias cuentas y retira sistemáticamente por debajo del límite de $10,000 USD.
+- `LavadorCrypto`: Realiza saltos ("hops") desde orígenes dispersos hacia una billetera central (Bridge) y envía el acumulado a un Exchange centralizado en cuotas.
+
+## Data Quality (Inyección de Ruido - Capa Bronce)
+
+El módulo `capa_bronze/data_quality.py` se encarga de introducir, mediante el uso de operaciones vectorizadas y NumPy, un 15% de ruido (Data Sucia). Puede generar:
+- Tipos de fecha inconsistentes (DD/MM/YYYY en vez de YYYY-MM-DD).
+- Errores tipográficos en la columna de monedas.
+- Identificadores PK nulos (`NaN`).
+- Filas duplicadas transaccionales.
+
+## Pipeline Analítico (Arquitectura Medallón)
+
+El proyecto implementa una arquitectura medallón para el procesamiento y transformación de los datos:
+
+### Capa Bronze (Raw Data)
+Contiene los datos crudos generados por el simulador (`capa_bronze/`), incluyendo el ruido y las inconsistencias inyectadas intencionalmente para validar los procesos de limpieza. Los datos se almacenan en bases de datos relacionales (Azure SQL) y almacenes locales.
+
+### Capa Silver (Limpieza y Estandarización)
+Implementada en `capa_silver/` mediante notebooks de PySpark (`capa_plata_AML.ipynb`), esta capa procesa los datos de la capa Bronze aplicando reglas de calidad:
+- Eliminación de registros con claves primarias nulas (`PK_Transaccion`).
+- Limpieza y formateo de montos numéricos (manejo de separadores decimales y casteos de tipo numérico).
+- Filtrado de transacciones no válidas (ej. monto cero o negativo).
+- Eliminación de registros transaccionales duplicados.
+- Estandarización de cadenas de texto (eliminación de espacios y conversión a mayúsculas para códigos de `Moneda`).
+- Almacenamiento y actualización en formato Delta Lake utilizando operaciones `MERGE` (Upsert) dentro de la tabla gestionada en Databricks: **`transacciones_plata_robert`**.
+
+### Capa Gold (Machine Learning, Reglas de Negocio y Compliance AML)
+Ubicada en `capa_gold/` (con notebook `capa_oro_AML.ipynb` para Databricks), esta capa consume directamente la tabla limpia **`transacciones_plata_robert`** y la dimensión de clientes (`Dim_Cliente`) para consolidar el valor analítico y de cumplimiento normativo mediante un enfoque híbrido:
+
+1. **Ingeniería de Características:**
+   - Agregaciones transaccionales bidireccionales (fondos enviados/recibidos, volumen, promedios, desviaciones).
+   - Ratios de comportamiento: flujo de entrada vs. salida (`Ratio_Salida_vs_Entrada`), índice de concentración/embudo (`Indice_Fan_In`) y ratio de riesgo cripto (`Ratio_Tx_Crypto`).
+   - Comparativa contra el perfil KYC: desvío transaccional respecto al ingreso declarado (`Ratio_Operado_vs_Ingreso_Declarado`).
+
+2. **Detección de Anomalías con Machine Learning:**
+   - Modelo no supervisado **Isolation Forest** entrenado sobre las variables de comportamiento.
+   - Cálculo de score normalizado de anomalía matemática (`ML_Anomaly_Score`).
+
+3. **Motor de Reglas y Clasificación de Tipologías AML:**
+   - **Estructuración / Pitufeo (`Flag_Structuring_Pitufeo`):** Fraccionamiento de transacciones $\le \$3,000$ acumulando sumas cercanas al umbral de $\$10,000$ USD.
+   - **Embudo de Plataformas (`Flag_Fan_In_Plataforma`):** Múltiples micro-pagos entrantes con retiro consolidado posterior.
+   - **Saltos Cripto / Mixer (`Flag_Crypto_Mixer`):** Transferencias escalonadas hacia Exchanges/Billeteras puente.
+   - **Inconsistencia KYC (`Flag_Desvio_KYC`):** Actividad operativa desproporcionada frente al ingreso mensual declarado.
+   - Score compuesto ponderado (`AML_Risk_Score`) y clasificación en:
+     - `ALTO RIESGO - ALERTA ROS` (Score $\ge 70$)
+     - `MEDIO RIESGO - MONITOREO` (Score $40 - 69.9$)
+     - `BAJO RIESGO - NORMAL` (Score $< 40$)
+
+4. **Tablas Delta / Datasets de Salida:**
+   - **`gold_perfiles_riesgo_cliente`:** Perfil 360 del cliente con métricas agregadas, scores de riesgo y tipologías detectadas.
+   - **`gold_alertas_aml`:** Detalle transaccional de operaciones alertadas para la generación de Reportes de Operaciones Sospechosas (ROS / SAR).
+
+## CI/CD y Automatización
+
+El archivo [aml_pipeline.yml](file:///c:/Users/Home/Documents/AML_lavado_de_dinero/simulador_de_datos_de_lavado_de_dinero/.github/workflows/aml_pipeline.yml) dentro de `.github/workflows` orquesta la ejecución desatendida del simulador en **GitHub Actions**:
+- Ejecución diaria programada vía `cron`.
+- Configuración de dependencias, drivers ODBC (`msodbcsql18`) y entorno Python.
+- Inyección automatizada de nuevos lotes transaccionales a Azure SQL Database.
+
+## Configuración y Ejecución
+
+### 1. Ejecutar Capa Bronze (Generación y Carga)
+```bash
+cd capa_bronze
+pip install -r requirements.txt
+python main.py
+```
+
+# AML End-to-End Pipeline: Simulación y procesamiento de Datos
+
+Este proyecto genera un conjunto de datos sintéticos (DataFrames de Pandas) que simula transacciones financieras y perfiles de usuarios. Estos datos están diseñados como la capa de origen (Bronze Layer) para un pipeline analítico en herramientas como Databricks y bases de datos transaccionales como Azure SQL.
+
+## Arquitectura y Estructura del Repositorio
+
+El repositorio sigue un diseño modular por capas alineado con la arquitectura medallón y la automatización continua (CI/CD):
+
+```text
+├── .github/
+│   └── workflows/
+│       └── aml_pipeline.yml      # Automatización CI/CD con GitHub Actions (ejecución programada)
+├── capa_bronze/                  # Generación y simulación de datos sintéticos (Raw Data)
+│   ├── clases_actores.py         # Modelado POO de perfiles legítimos y patrones de lavado de dinero
+│   ├── config.py                 # Parámetros generales y configuración de la simulación
+│   ├── data_quality.py           # Inyección controlada de anomalías y datos sucios (15%)
+│   ├── db_connection.py          # Conector y carga de datos hacia Azure SQL Database
+│   ├── main.py                   # Orquestador principal de generación y persistencia
+│   └── requirements.txt          # Dependencias de Python para la capa bronce
+├── capa_silver/                  # Limpieza, estandarización y transformación Delta Lake
+│   └── capa_plata_AML.ipynb      # Notebook de PySpark para la capa plata
+├── capa_gold/                    # Detección de anomalías, Machine Learning y Reglas AML
+│   └── capa_oro_AML.ipynb        # Notebook de PySpark y Delta Lake para Databricks
+├── reporte/                      # Reportes de trazabilidad y arquitectura interactivos
+│   └── databricks_aml_gold_analysis.ipynb # Dashboard interactivo (Plotly) y Data Lineage
+├── .gitignore                    # Exclusiones de control de versiones
+└── README.md                     # Documentación integral del proyecto
+```
+
+## Arquitectura de Datos (Esquema Estrella)
+
+El modelo dimensional está compuesto por:
+
+1. **Dim_Cliente:** Tabla de dimensiones con datos demográficos (Edad, Ocupación y un ingreso aproximado).
+2. **Fact_Transacciones:** Tabla de hechos con los eventos transaccionales, orígenes, destinos y geografía.
+
+## Estructura Orientada a Objetos (POO)
+
+El proyecto utiliza una clase base `PerfilFinanciero` en `capa_bronze/clases_actores.py` de la que heredan:
+- `ClienteNormal`: Tráfico y compras legítimas ("ruido blanco" o camuflaje).
+- `PitufoBancario`: Fracciona montos ilícitos (Structuring) en días consecutivos en efectivo.
+- `LavadorPlataformas`: Recibe múltiples micro-pagos de varias cuentas y retira sistemáticamente por debajo del límite de $10,000 USD.
+- `LavadorCrypto`: Realiza saltos ("hops") desde orígenes dispersos hacia una billetera central (Bridge) y envía el acumulado a un Exchange centralizado en cuotas.
+
+## Data Quality (Inyección de Ruido - Capa Bronce)
+
+El módulo `capa_bronze/data_quality.py` se encarga de introducir, mediante el uso de operaciones vectorizadas y NumPy, un 15% de ruido (Data Sucia). Puede generar:
+- Tipos de fecha inconsistentes (DD/MM/YYYY en vez de YYYY-MM-DD).
+- Errores tipográficos en la columna de monedas.
+- Identificadores PK nulos (`NaN`).
+- Filas duplicadas transaccionales.
+
+## Pipeline Analítico (Arquitectura Medallón)
+
+El proyecto implementa una arquitectura medallón para el procesamiento y transformación de los datos:
+
+### Capa Bronze (Raw Data)
+Contiene los datos crudos generados por el simulador (`capa_bronze/`), incluyendo el ruido y las inconsistencias inyectadas intencionalmente para validar los procesos de limpieza. Los datos se almacenan en bases de datos relacionales (Azure SQL) y almacenes locales.
+
+### Capa Silver (Limpieza y Estandarización)
+Implementada en `capa_silver/` mediante notebooks de PySpark (`capa_plata_AML.ipynb`), esta capa procesa los datos de la capa Bronze aplicando reglas de calidad:
+- Eliminación de registros con claves primarias nulas (`PK_Transaccion`).
+- Limpieza y formateo de montos numéricos (manejo de separadores decimales y casteos de tipo numérico).
+- Filtrado de transacciones no válidas (ej. monto cero o negativo).
+- Eliminación de registros transaccionales duplicados.
+- Estandarización de cadenas de texto (eliminación de espacios y conversión a mayúsculas para códigos de `Moneda`).
+- Almacenamiento y actualización en formato Delta Lake utilizando operaciones `MERGE` (Upsert) dentro de la tabla gestionada en Databricks: **`transacciones_plata_robert`**.
+
+### Capa Gold (Machine Learning, Reglas de Negocio y Compliance AML)
+Ubicada en `capa_gold/` (con notebook `capa_oro_AML.ipynb` para Databricks), esta capa consume directamente la tabla limpia **`transacciones_plata_robert`** y la dimensión de clientes (`Dim_Cliente`) para consolidar el valor analítico y de cumplimiento normativo mediante un enfoque híbrido:
+
+1. **Ingeniería de Características:**
+   - Agregaciones transaccionales bidireccionales (fondos enviados/recibidos, volumen, promedios, desviaciones).
+   - Ratios de comportamiento: flujo de entrada vs. salida (`Ratio_Salida_vs_Entrada`), índice de concentración/embudo (`Indice_Fan_In`) y ratio de riesgo cripto (`Ratio_Tx_Crypto`).
+   - Comparativa contra el perfil KYC: desvío transaccional respecto al ingreso declarado (`Ratio_Operado_vs_Ingreso_Declarado`).
+
+2. **Detección de Anomalías con Machine Learning:**
+   - Modelo no supervisado **Isolation Forest** entrenado sobre las variables de comportamiento.
+   - Cálculo de score normalizado de anomalía matemática (`ML_Anomaly_Score`).
+
+3. **Motor de Reglas y Clasificación de Tipologías AML:**
+   - **Estructuración / Pitufeo (`Flag_Structuring_Pitufeo`):** Fraccionamiento de transacciones $\le \$3,000$ acumulando sumas cercanas al umbral de $\$10,000$ USD.
+   - **Embudo de Plataformas (`Flag_Fan_In_Plataforma`):** Múltiples micro-pagos entrantes con retiro consolidado posterior.
+   - **Saltos Cripto / Mixer (`Flag_Crypto_Mixer`):** Transferencias escalonadas hacia Exchanges/Billeteras puente.
+   - **Inconsistencia KYC (`Flag_Desvio_KYC`):** Actividad operativa desproporcionada frente al ingreso mensual declarado.
+   - Score compuesto ponderado (`AML_Risk_Score`) y clasificación en:
+     - `ALTO RIESGO - ALERTA ROS` (Score $\ge 70$)
+     - `MEDIO RIESGO - MONITOREO` (Score $40 - 69.9$)
+     - `BAJO RIESGO - NORMAL` (Score $< 40$)
+
+4. **Tablas Delta / Datasets de Salida:**
+   - **`gold_perfiles_riesgo_cliente`:** Perfil 360 del cliente con métricas agregadas, scores de riesgo y tipologías detectadas.
+   - **`gold_alertas_aml`:** Detalle transaccional de operaciones alertadas para la generación de Reportes de Operaciones Sospechosas (ROS / SAR).
+
+## CI/CD y Automatización
+
+El archivo [aml_pipeline.yml](file:///c:/Users/Home/Documents/AML_lavado_de_dinero/simulador_de_datos_de_lavado_de_dinero/.github/workflows/aml_pipeline.yml) dentro de `.github/workflows` orquesta la ejecución desatendida del simulador en **GitHub Actions**:
+- Ejecución diaria programada vía `cron`.
+- Configuración de dependencias, drivers ODBC (`msodbcsql18`) y entorno Python.
+- Inyección automatizada de nuevos lotes transaccionales a Azure SQL Database.
+
+## Configuración y Ejecución
+
+### 1. Ejecutar Capa Bronze (Generación y Carga)
+```bash
+cd capa_bronze
+pip install -r requirements.txt
+python main.py
+```
+
+### 2. Ejecutar Capa Silver (Limpieza y Delta Lake)
+Ejecutar el notebook `capa_silver/capa_plata_AML.ipynb` en un cluster de **Databricks**.
+
+### 3. Ejecutar Capa Gold (Machine Learning y Alertas AML)
+Ejecutar el notebook `capa_gold/capa_oro_AML.ipynb` en un cluster de **Databricks** para persistir las tablas maestras Delta `gold_perfiles_riesgo_cliente` y `gold_alertas_aml`.
+
+## Visualización y Reporte 
+
+### 1. Reporte Técnico para Data Engineers
+Dentro del directorio `reporte/` encontrarás el notebook `databricks_aml_gold_analysis.ipynb`. **Este documento está diseñado y enfocado específicamente para Data Engineers y Arquitectos de Datos**. Presenta un resumen técnico completo de las decisiones de diseño del pipeline (Arquitectura Medallion, CDC, Particionamiento Estratégico, Idempotencia, Data Lineage) y utiliza visualizaciones avanzadas (Sankey, Sunburst, 3D Scatter) para demostrar cómo el sistema traza e identifica el flujo de capitales ilícitos a escala directamente desde la Capa Gold.
