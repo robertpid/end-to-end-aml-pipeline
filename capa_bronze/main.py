@@ -3,7 +3,7 @@ import random
 from datetime import datetime, timedelta
 import pandas as pd
 
-from config import TOTAL_REGISTROS
+from config import TOTAL_REGISTROS_MIN, TOTAL_REGISTROS_MAX
 from clases_actores import ClienteNormal, PitufoBancario, LavadorPlataformas, LavadorCrypto
 from data_quality import inyectar_ruido
 from db_connection import obtener_engine_azure, subir_dataframe_azure
@@ -26,8 +26,11 @@ def main():
     # Clases disponibles para simular
     clases_perfiles = [ClienteNormal, PitufoBancario, LavadorPlataformas, LavadorCrypto]
     
+    # Determinamos la meta aleatoria de registros a generar
+    meta_registros = random.randint(TOTAL_REGISTROS_MIN, TOTAL_REGISTROS_MAX)
+    
     # 1. Generación de Datos
-    while len(transacciones_totales) < TOTAL_REGISTROS:
+    while len(transacciones_totales) < meta_registros:
         # Elegimos aleatoriamente un perfil. Para que haya más ruido legítimo, podemos dar pesos
         # Pero aquí se selecciona de forma equiprobable o dándole más peso a ClienteNormal (opcional)
         perfil_class = random.choices(
@@ -48,9 +51,9 @@ def main():
         except Exception as e:
             logger.error(f"Error generando datos para la clase {perfil_class.__name__}: {e}")
 
-    # Forzar exactamente TOTAL_REGISTROS si se excede
-    if len(transacciones_totales) > TOTAL_REGISTROS:
-        transacciones_totales = transacciones_totales[:TOTAL_REGISTROS]
+    # Forzar exactamente meta_registros si se excede
+    if len(transacciones_totales) > meta_registros:
+        transacciones_totales = transacciones_totales[:meta_registros]
 
     logger.info(f"Generadas {len(transacciones_totales)} transacciones y {len(clientes_totales)} clientes.")
 

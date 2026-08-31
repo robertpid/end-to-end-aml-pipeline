@@ -54,7 +54,9 @@ def inyectar_ruido(df: pd.DataFrame) -> pd.DataFrame:
         
     # 3. Nulos Forzados
     if len(idx_nulo) > 0:
-        df_ruido.loc[idx_nulo, 'PK_Transaccion'] = np.nan
+        df_nulos = df_ruido.loc[idx_nulo].copy()
+        df_nulos['PK_Transaccion'] = np.nan
+        df_ruido = pd.concat([df_ruido, df_nulos], ignore_index=True)
         
     # 4. Duplicación de fila con +1 segundo
     if len(idx_duplicado) > 0:
