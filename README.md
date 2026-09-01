@@ -1,5 +1,24 @@
 # AML End-to-End Pipeline: Simulación y Procesamiento de Datos
 
+> **Cumplimiento Normativo:** Este proyecto está diseñado con un fuerte enfoque en los lineamientos del **GAFI / FATF** (Grupo de Acción Financiera Internacional) y las normativas locales peruanas como la **Resolución SBS N° 2660-2015**, implementando controles estrictos para la prevención del lavado de activos y del financiamiento del terrorismo (PLAFT).
+
+## Ciclo de Vida de los Datos (Data Flow)
+
+```mermaid
+graph TD
+    A[Simulador / Python<br>Capa Bronce] -->|Ruido Inyectado| B[(Azure SQL<br>Raw Data)]
+    B -->|Extracción| C[Capa Silver<br>PySpark / Databricks]
+    C -->|Estandarización| D[(Delta Lake<br>Tabla Plata)]
+    D -->|Machine Learning & Reglas| E[Capa Gold<br>PySpark / Databricks]
+    E -->|Scoring & Tipologías| F[(Delta Lake<br>Tabla Oro)]
+    F -->|Trazabilidad| G[Dashboard Técnico<br>Data Engineers]
+    F -->|Alertas| H[Reporte ROS PDF<br>Oficial de Cumplimiento]
+    
+    style A fill:#cd7f32,stroke:#333,stroke-width:2px
+    style C fill:#c0c0c0,stroke:#333,stroke-width:2px
+    style E fill:#ffd700,stroke:#333,stroke-width:2px
+```
+
 Este proyecto genera un conjunto de datos sintéticos (DataFrames de Pandas) que simula transacciones financieras y perfiles de usuarios. Estos datos están diseñados como la capa de origen (Bronze Layer) para un pipeline analítico en herramientas como Databricks y bases de datos transaccionales como Azure SQL.
 
 ## Índice
@@ -10,8 +29,9 @@ Este proyecto genera un conjunto de datos sintéticos (DataFrames de Pandas) que
 5. [Pipeline Analítico (Arquitectura Medallón)](#pipeline-analítico-arquitectura-medallón)
 6. [Nuevas Funcionalidades (Updates Recientes)](#nuevas-funcionalidades-updates-recientes)
 7. [CI/CD y Automatización](#cicd-y-automatización)
-8. [Configuración y Ejecución](#configuración-y-ejecución)
-9. [Visualización y Reportes](#visualización-y-reportes)
+8. [Despliegue y Contenerización (Docker)](#despliegue-y-contenerización-docker)
+9. [Configuración y Ejecución](#configuración-y-ejecución)
+10. [Visualización y Reportes](#visualización-y-reportes)
 
 ---
 
@@ -124,9 +144,27 @@ Ubicada en `capa_gold/` (con notebook `capa_oro_AML.ipynb` para Databricks), est
    - El pipeline orquesta en cadena: Notebook Capa Plata -> Notebook Capa Oro -> Script Generador de ROS.
    - Incluye **alertas y notificaciones por correo electrónico** ante cualquier fallo en las tareas del pipeline para garantizar una monitorización proactiva por parte del equipo de ingeniería de datos.
 
+## Despliegue y Contenerización (Docker)
+
+Todo el pipeline ha sido contenerizado utilizando Docker para garantizar la portabilidad y la reproducibilidad del entorno en cualquier máquina.
+
+1. **Imagen Base**: Se utiliza `python:3.10-slim` (basada en Debian) para mantener un tamaño ligero pero asegurando la compatibilidad con repositorios del sistema.
+2. **Dependencias Críticas Integradas**: El contenedor instala automáticamente **Java (JRE)** (obligatorio para la ejecución de PySpark) y el **Microsoft ODBC Driver 18 for SQL Server** (necesario para las conexiones hacia Azure SQL).
+3. **Gestión Unificada**: Se integró un único `requirements.txt` con todas las dependencias necesarias (`pandas`, `pyodbc`, `pyspark`, `delta-spark`, `scikit-learn`, `plotly`, `jupyterlab`).
+4. **Orquestación**: El archivo `docker-compose.yml` permite levantar el proyecto y expone un servidor de JupyterLab listo para usarse, sincronizando tu código local con el contenedor mediante volúmenes.
+
 ## Configuración y Ejecución
 
-### 1. Ejecutar Capa Bronze (Generación y Carga)
+### 1. Ejecución Unificada vía Docker (Recomendado)
+Para evitar conflictos de dependencias e instalación de drivers, usa el contenedor preconfigurado:
+1. Renombra el archivo `.env.example` a `.env` y coloca tu contraseña en la variable `AZURE_DB_PASSWORD`.
+2. En la raíz del proyecto, ejecuta:
+   ```bash
+   docker-compose up --build
+   ```
+3. Accede a `http://localhost:8888` en tu navegador usando el token `aml123`. Desde allí tendrás un JupyterLab con acceso a todos los scripts y notebooks del proyecto.
+
+### 2. Ejecutar Capa Bronze (Generación y Carga) Localmente
 (Normalmente ejecutado vía GitHub Actions, o de forma local).
 ```bash
 cd capa_bronze
@@ -134,13 +172,13 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### 2. Ejecutar Capa Silver (Limpieza y Delta Lake)
-Ejecutar el notebook `capa_silver/capa_plata_AML.ipynb` en un cluster de **Databricks**, o dejar que el Databricks Job de las 9:00 AM lo procese.
+### 3. Ejecutar Capa Silver (Limpieza y Delta Lake)
+Ejecutar el notebook `capa_silver/capa_plata_AML.ipynb` en un cluster de **Databricks**, o dejar que el Databricks Job de las 9:00 AM lo procese. También puedes correrlo dentro del contenedor Docker.
 
-### 3. Ejecutar Capa Gold (Machine Learning y Alertas AML)
-Ejecutar el notebook `capa_gold/capa_oro_AML.ipynb` en Databricks, el cual depende de los resultados de la capa Silver.
+### 4. Ejecutar Capa Gold (Machine Learning y Alertas AML)
+Ejecutar el notebook `capa_gold/capa_oro_AML.ipynb` (depende de los resultados de la capa Silver).
 
-### 4. Generación Automática de Reporte ROS (PDF)
+### 5. Generación Automática de Reporte ROS (PDF)
 El generador de reporte (`reporte/generar_reporte.py`) ahora es un script/notebook nativo de PySpark.
 Para ejecutarlo:
 1. Copia o importa el archivo `generar_reporte.py` a tu Workspace de Databricks (se puede cargar como notebook).
