@@ -22,7 +22,7 @@ El repositorio sigue un diseño modular por capas alineado con la arquitectura m
 ```text
 ├── .github/
 │   └── workflows/
-│       └── aml_pipeline.yml      # Automatización CI/CD con GitHub Actions (ejecución programada)
+│       └── aml_pipeline.yml      # Automatización CI/CD con GitHub Actions (ejecución programada de Capa Bronce)
 ├── capa_bronze/                  # Generación y simulación de datos sintéticos (Raw Data)
 │   ├── clases_actores.py         # Modelado POO de perfiles legítimos y patrones de lavado de dinero
 │   ├── config.py                 # Parámetros generales y configuración de la simulación
@@ -36,8 +36,7 @@ El repositorio sigue un diseño modular por capas alineado con la arquitectura m
 │   └── capa_oro_AML.ipynb        # Notebook de PySpark y Delta Lake para Databricks
 ├── reporte/                      # Reportes de trazabilidad y de inteligencia financiera
 │   ├── databricks_aml_gold_analysis.ipynb # Dashboard interactivo (Plotly) y Data Lineage
-│   ├── generar_reporte.py        # Script para generar automáticamente el Reporte ROS (PDF)
-│   └── Reporte_ROS_Inteligencia_Financiera.pdf # PDF auto-generado con análisis y métricas reales
+│   └── generar_reporte.py        # Script/Notebook nativo para Databricks (generador de ROS en PDF)
 ├── .gitignore                    # Exclusiones de control de versiones
 └── README.md                     # Documentación integral del proyecto
 ```
@@ -112,18 +111,23 @@ Ubicada en `capa_gold/` (con notebook `capa_oro_AML.ipynb` para Databricks), est
 - **Volumen Transaccional Realista:** La Capa Bronce ahora genera dinámicamente un número de registros aproximado (ej. de 9500 a 10500) por ejecución, aportando variabilidad realista en vez de un número estático.
 - **Protección de Data Válida:** La inyección de valores nulos se hace por anexado (*append*), asegurando que el 100% de la data legítima llegue intacta a las capas superiores.
 - **Alta Precisión Financiera:** La Capa Plata ahora convierte y procesa todos los montos a formato *Double* redondeando exactamente a dos decimales, erradicando el truncado a enteros y protegiendo información monetaria crucial.
-- **Reporte ROS Automatizado:** Se ha integrado un nuevo pipeline analítico local en `reporte/generar_reporte.py` que recorre la lógica Silver/Gold y exporta un documento PDF oficial ("Reporte de Inteligencia Financiera") usando números reales de la ejecución.
+- **Reporte ROS Nativo en Databricks:** Se rediseñó la arquitectura de reportes. Ahora el script `reporte/generar_reporte.py` se ejecuta **nativamente como un Job/Notebook en Databricks** interactuando directamente con Spark SQL, permitiendo generar el PDF oficial del ROS consultando las capas Delta sin latencia y con data 100% verídica.
 
 ## CI/CD y Automatización
 
-El archivo `aml_pipeline.yml` dentro de `.github/workflows` orquesta la ejecución desatendida del simulador en **GitHub Actions**:
-- Ejecución diaria programada vía `cron`.
-- Configuración de dependencias, drivers ODBC (`msodbcsql18`) y entorno Python.
-- Inyección automatizada de nuevos lotes transaccionales a Azure SQL Database.
+1. **Automatización de Generación de Data (Capa Bronce):** El archivo `aml_pipeline.yml` dentro de `.github/workflows` orquesta la ejecución desatendida del simulador en **GitHub Actions**:
+   - Ejecución diaria programada vía `cron`.
+   - Inyección automatizada de nuevos lotes transaccionales a Azure SQL Database.
+
+2. **Automatización Analítica (Databricks Jobs):** Toda la lógica de transformación de las capas Silver y Gold, así como la generación automatizada de reportes ROS, está centralizada en **Databricks Workflows (Jobs)**.
+   - Existe un *trigger* programado que se ejecuta automáticamente de forma diaria a las **9:00 AM**.
+   - El pipeline orquesta en cadena: Notebook Capa Plata -> Notebook Capa Oro -> Script Generador de ROS.
+   - Incluye **alertas y notificaciones por correo electrónico** ante cualquier fallo en las tareas del pipeline para garantizar una monitorización proactiva por parte del equipo de ingeniería de datos.
 
 ## Configuración y Ejecución
 
 ### 1. Ejecutar Capa Bronze (Generación y Carga)
+(Normalmente ejecutado vía GitHub Actions, o de forma local).
 ```bash
 cd capa_bronze
 pip install -r requirements.txt
@@ -131,16 +135,17 @@ python main.py
 ```
 
 ### 2. Ejecutar Capa Silver (Limpieza y Delta Lake)
-Ejecutar el notebook `capa_silver/capa_plata_AML.ipynb` en un cluster de **Databricks**.
+Ejecutar el notebook `capa_silver/capa_plata_AML.ipynb` en un cluster de **Databricks**, o dejar que el Databricks Job de las 9:00 AM lo procese.
 
 ### 3. Ejecutar Capa Gold (Machine Learning y Alertas AML)
-Ejecutar el notebook `capa_gold/capa_oro_AML.ipynb` en un cluster de **Databricks** para persistir las tablas maestras Delta `gold_perfiles_riesgo_cliente` y `gold_alertas_aml`.
+Ejecutar el notebook `capa_gold/capa_oro_AML.ipynb` en Databricks, el cual depende de los resultados de la capa Silver.
 
 ### 4. Generación Automática de Reporte ROS (PDF)
-```bash
-pip install fpdf pandas scikit-learn
-python reporte/generar_reporte.py
-```
+El generador de reporte (`reporte/generar_reporte.py`) ahora es un script/notebook nativo de PySpark.
+Para ejecutarlo:
+1. Copia o importa el archivo `generar_reporte.py` a tu Workspace de Databricks (se puede cargar como notebook).
+2. Asegúrate de instalar previamente las dependencias de Python (`fpdf`, `pandas`) dentro del entorno del clúster de Databricks.
+3. Ejecútalo. El PDF resultante (`Reporte_ROS_Inteligencia_Financiera.pdf`) se guardará en `/databricks/driver/` o en DBFS para que puedas descargarlo usando la UI de Databricks.
 
 ## Visualización y Reportes 
 
@@ -148,4 +153,4 @@ python reporte/generar_reporte.py
 Dentro del directorio `reporte/` encontrarás el notebook `databricks_aml_gold_analysis.ipynb`. **Este documento está diseñado y enfocado específicamente para Data Engineers y Arquitectos de Datos**. Presenta un resumen técnico completo de las decisiones de diseño del pipeline (Arquitectura Medallion, CDC, Particionamiento Estratégico, Idempotencia, Data Lineage) y utiliza visualizaciones avanzadas (Sankey, Sunburst, 3D Scatter) para demostrar cómo el sistema traza e identifica el flujo de capitales ilícitos a escala directamente desde la Capa Gold.
 
 ### 2. Informe ROS para Analistas AML
-Dentro del directorio `reporte/` encontrarás `Reporte_ROS_Inteligencia_Financiera.pdf`, un documento corporativo autogenerado destinado al equipo de Prevención de Fraude, con conteo de alertas, patrones identificados e IDs de sujetos críticos.
+El nuevo script generador en el pipeline produce el documento corporativo autogenerado destinado al equipo de Prevención de Fraude, con conteo de alertas, patrones identificados e IDs de sujetos críticos. Este archivo PDF se emite diariamente luego del procesamiento en Databricks de las capas Silver y Gold.
