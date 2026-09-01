@@ -1,0 +1,380 @@
+{
+  "datasets": [
+    {
+      "name": "aml_alerts",
+      "displayName": "AML Alerts Data",
+      "queryLines": [
+        "-- AML alerts data with all rule categories\n",
+        "SELECT\n",
+        "  Fecha_Transaccion AS Fecha,\n",
+        "  CASE\n",
+        "    WHEN Monto_USD > 9500 THEN 'KYC Deviation'\n",
+        "    WHEN Monto_USD > 9000 THEN 'Structuring (Pitufeo)'\n",
+        "    WHEN Monto_USD > 8000 THEN 'Crypto Mixer'\n",
+        "    WHEN Monto_USD > 6000 THEN 'Fan-In Platform'\n",
+        "    ELSE 'Other Rule'\n",
+        "  END AS Rule_Triggered,\n",
+        "  Monto_USD,\n",
+        "  PK_Transaccion AS Alert_ID,\n",
+        "  FK_Cliente_Origen AS Cliente_ID,\n",
+        "  CASE\n",
+        "    WHEN Monto_USD > 9000 THEN 'ALTO RIESGO - ALERTA ROJA'\n",
+        "    ELSE 'MEDIO RIESGO - MONITOREO'\n",
+        "  END AS Nivel_Riesgo\n",
+        "FROM\n",
+        "  workspace.aml_proyect.transacciones_plata_robert\n",
+        "WHERE\n",
+        "  Fecha_Transaccion >= DATE('2026-08-01')\n",
+        "  AND Monto_USD > 5000\n",
+        "ORDER BY\n",
+        "  Fecha_Transaccion DESC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "b04df864",
+      "displayName": "Untitled page",
+      "layout": [
+        {
+          "widget": {
+            "name": "date_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f1a625d0971e16a8848a33a308c729/datasets/01f1a626c2d81d8da6948dffb4c95b25_Fecha",
+                "query": {
+                  "datasetName": "aml_alerts",
+                  "fields": [
+                    {
+                      "name": "Fecha",
+                      "expression": "`Fecha`"
+                    },
+                    {
+                      "name": "Fecha_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Filtro de Fecha"
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Fecha",
+                    "queryName": "dashboards/01f1a625d0971e16a8848a33a308c729/datasets/01f1a626c2d81d8da6948dffb4c95b25_Fecha"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 8,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "alert_trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "aml_alerts",
+                  "fields": [
+                    {
+                      "name": "Fecha",
+                      "expression": "`Fecha`"
+                    },
+                    {
+                      "name": "count(*)",
+                      "expression": "COUNT(`*`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Tendencia Histórica de Alertas"
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Fecha",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "count(*)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "risk_by_rule",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "aml_alerts",
+                  "fields": [
+                    {
+                      "name": "Rule_Triggered",
+                      "expression": "`Rule_Triggered`"
+                    },
+                    {
+                      "name": "sum(Monto_USD)",
+                      "expression": "SUM(`Monto_USD`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Monto Total en Riesgo (USD)"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Rule_Triggered",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(Monto_USD)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Rule_Triggered",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 13,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "dashboard_title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Dashboard AML - Monitoreo de Lavado de Activos\n",
+                "Monitoreo en tiempo real de alertas, perfiles de riesgo y tendencias de tipologías AML"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "total_alerts",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "aml_alerts",
+                  "fields": [
+                    {
+                      "name": "count(*)",
+                      "expression": "COUNT(`*`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Total de Alertas Generadas"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(*)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "total_risk_amount",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "aml_alerts",
+                  "fields": [
+                    {
+                      "name": "sum(Monto_USD)",
+                      "expression": "SUM(`Monto_USD`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Monto Acumulado en Riesgo (USD)"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(Monto_USD)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "risk_distribution",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "aml_alerts",
+                  "fields": [
+                    {
+                      "name": "countdistinct(Cliente_ID)",
+                      "expression": "COUNT(DISTINCT `Cliente_ID`)"
+                    },
+                    {
+                      "name": "Nivel_Riesgo",
+                      "expression": "`Nivel_Riesgo`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Distribución de Clientes por Nivel de Riesgo",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "countdistinct(Cliente_ID)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Nivel_Riesgo",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "ALTO RIESGO - ALERTA ROJA",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 4
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 2,
+            "width": 4,
+            "height": 5
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
