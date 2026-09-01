@@ -29,13 +29,17 @@ def main():
     # Determinamos la meta aleatoria de registros a generar
     meta_registros = random.randint(TOTAL_REGISTROS_MIN, TOTAL_REGISTROS_MAX)
     
+    # Generamos una probabilidad aleatoria para los casos anómalos entre 0.2% y 1%
+    prob_sospechosos = random.uniform(0.002, 0.01)
+    prob_normal = 1.0 - prob_sospechosos
+    prob_por_lavador = prob_sospechosos / 3.0
+    
     # 1. Generación de Datos
     while len(transacciones_totales) < meta_registros:
-        # Elegimos aleatoriamente un perfil. Para que haya más ruido legítimo, podemos dar pesos
-        # Pero aquí se selecciona de forma equiprobable o dándole más peso a ClienteNormal (opcional)
+        # Elegimos aleatoriamente un perfil.
         perfil_class = random.choices(
             population=clases_perfiles,
-            weights=[0.70, 0.10, 0.10, 0.10], # 70% clientes normales
+            weights=[prob_normal, prob_por_lavador, prob_por_lavador, prob_por_lavador],
             k=1
         )[0]
         
