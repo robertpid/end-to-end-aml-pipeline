@@ -1,5 +1,7 @@
 # 🛡️ AML End-to-End Pipeline: Simulación y Procesamiento de Datos
 
+> 🚀 **Simulación a Escala (Big Data):** Este pipeline está optimizado para replicar entornos transaccionales masivos de la vida real, siendo capaz de generar y procesar entre **2.5 y 3 millones de transacciones** por ejecución de forma dinámica.
+> 
 > ⚖️ **Cumplimiento Normativo:** Este proyecto está diseñado con un fuerte enfoque en los lineamientos del **GAFI / FATF** (Grupo de Acción Financiera Internacional) y las normativas locales peruanas como la **Resolución SBS N° 2660-2015**, implementando controles estrictos para la prevención del lavado de activos y del financiamiento del terrorismo (PLAFT).
 
 ## 🔄 Ciclo de Vida de los Datos (Data Flow)
