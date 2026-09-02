@@ -132,10 +132,12 @@ Ubicada en `capa_gold/` (con notebook `capa_oro_AML.ipynb` para Databricks), est
 
 ## ✨ Nuevas Funcionalidades (Updates Recientes)
 
-- **Volumen Transaccional Realista:** La Capa Bronce ahora genera dinámicamente un número de registros aproximado (ej. de 9500 a 10500) por ejecución, aportando variabilidad realista en vez de un número estático.
+- **Optimización de Procesamiento por Lotes (Batching):** La Capa Bronce ahora procesa las transacciones en lotes de 100,000 en 100,000. Esto evita la saturación de la memoria RAM y permite generar de manera infinita (actualmente configurado a >2.5 millones) en una sola corrida sin caídas de memoria, anexándolos directamente a los CSV y a Azure de forma progresiva.
+- **Inserción Masiva en Azure SQL:** Se optimizó el proceso de subida en la base de datos incrementando el `chunksize` a 50,000. El simulador soporta inserción progresiva (`APPEND`) por lotes, minimizando la latencia de red y logrando subir millones de filas eficientemente.
+- **Volumen Transaccional Masivo (Big Data):** Se incrementó la meta de simulación (2.5 - 2.55 millones de transacciones por ejecución) simulando un ecosistema transaccional a la escala requerida por Databricks y PySpark.
 - **Protección de Data Válida:** La inyección de valores nulos se hace por anexado (*append*), asegurando que el 100% de la data legítima llegue intacta a las capas superiores.
-- **Alta Precisión Financiera:** La Capa Plata ahora convierte y procesa todos los montos a formato *Double* redondeando exactamente a dos decimales, erradicando el truncado a enteros y protegiendo información monetaria crucial.
-- **Reporte ROS Nativo en Databricks:** Se rediseñó la arquitectura de reportes. Ahora el script `reporte/generar_reporte.py` se ejecuta **nativamente como un Job/Notebook en Databricks** interactuando directamente con Spark SQL, permitiendo generar el PDF oficial del ROS consultando las capas Delta sin latencia y con data 100% verídica.
+- **Alta Precisión Financiera:** La Capa Plata convierte y procesa todos los montos a formato *Double* redondeando exactamente a dos decimales, protegiendo información monetaria crucial.
+- **Reporte ROS Nativo en Databricks:** El script `reporte/generar_reporte.py` se ejecuta nativamente en Databricks interactuando directamente con Spark SQL, generando un PDF oficial del ROS consultando las capas Delta sin latencia.
 
 ## ⚙️ CI/CD y Automatización
 

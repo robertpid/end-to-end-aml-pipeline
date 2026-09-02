@@ -23,9 +23,9 @@ TASAS_CAMBIO = {
     'CNY': 6.72   # Yuan chino
 }
 
-# Rango de registros a generar para mayor realismo (aprox 10000)
-TOTAL_REGISTROS_MIN = 9500
-TOTAL_REGISTROS_MAX = 10500
+# Rango de registros a generar para mayor realismo (aprox 2.5 millones)
+TOTAL_REGISTROS_MIN = 2500000
+TOTAL_REGISTROS_MAX = 2550000
 
 # Cadena de conexión para Azure SQL
 AZURE_SQL_CONNECTION_STRING = (

@@ -25,7 +25,7 @@ def obtener_engine_azure():
         logger.error(f"Error al crear el engine de SQLAlchemy: {e}")
         return None
 
-def subir_dataframe_azure(df: pd.DataFrame, nombre_tabla: str, engine) -> bool:
+def subir_dataframe_azure(df: pd.DataFrame, nombre_tabla: str, engine, if_exists: str = 'replace') -> bool:
     """
     Sube un DataFrame de Pandas a una tabla en Azure SQL.
     
@@ -43,7 +43,7 @@ def subir_dataframe_azure(df: pd.DataFrame, nombre_tabla: str, engine) -> bool:
         
     try:
         logger.info(f"Iniciando la carga de datos a la tabla '{nombre_tabla}' en Azure SQL...")
-        df.to_sql(name=nombre_tabla, con=engine, if_exists='replace', index=False, chunksize=1000)
+        df.to_sql(name=nombre_tabla, con=engine, if_exists=if_exists, index=False, chunksize=50000)
         logger.info(f"Carga exitosa a '{nombre_tabla}'. ({len(df)} filas insertadas)")
         return True
     except Exception as e:
