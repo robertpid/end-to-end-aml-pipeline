@@ -39,10 +39,10 @@ def main():
     prob_normal = 1.0 - prob_sospechosos
     prob_por_lavador = prob_sospechosos / 3.0
     
-    # Obtenemos el motor de base de datos una sola vez
-    engine = obtener_engine_azure()
+    # Obtenemos el motor de base de datos (Desactivado temporalmente por límites de Azure Free Tier)
+    engine = None # obtener_engine_azure() 
     if not engine:
-        logger.warning("No se pudo conectar a Azure SQL. Los datos solo se guardarán en CSV.")
+        logger.warning("Conexión a Azure SQL desactivada. Los datos solo se guardarán en CSV para Databricks.")
         
     fecha_hoy_str = datetime.now().strftime("%Y%m%d")
     archivo_csv_hechos = f"transacciones_aml_{fecha_hoy_str}.csv"

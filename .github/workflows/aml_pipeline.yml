@@ -37,3 +37,11 @@ jobs:
       env:
         AZURE_DB_PASSWORD: ${{ secrets.AZURE_DB_PASSWORD }}
       run: python capa_bronze/main.py
+
+    - name: Subir CSVs como Artefactos (Para Databricks)
+      uses: actions/upload-artifact@v4
+      with:
+        name: aml-data-csvs
+        path: |
+          transacciones_aml_*.csv
+          clientes_aml_*.csv
