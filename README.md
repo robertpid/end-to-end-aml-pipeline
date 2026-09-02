@@ -13,8 +13,9 @@ graph TD
     C -->|Estandarización| D[(Delta Lake<br>Tabla Plata)]
     D -->|Machine Learning & Reglas| E[Capa Gold<br>PySpark / Databricks]
     E -->|Scoring & Tipologías| F[(Delta Lake<br>Tabla Oro)]
-    F -->|Trazabilidad| G[Dashboard Técnico<br>Data Engineers]
+    F -->|Trazabilidad| G[Reporte Interactivo<br>Data Engineers]
     F -->|Alertas| H[Reporte ROS PDF<br>Oficial de Cumplimiento]
+    F -->|KPIs & Monitoreo| I[Dashboard Ejecutivo<br>Gerencia]
     
     style A fill:#cd7f32,stroke:#333,stroke-width:2px
     style C fill:#c0c0c0,stroke:#333,stroke-width:2px
