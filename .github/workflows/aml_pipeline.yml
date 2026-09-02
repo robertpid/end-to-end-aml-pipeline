@@ -45,8 +45,8 @@ jobs:
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       run: |
         for file in transacciones_aml_*.csv; do
-            databricks fs cp "$file" "dbfs:/Volumes/workspace/aml_proyect/raw_data/$file" --overwrite
+            databricks fs cp "$file" "/Volumes/workspace/aml_proyect/raw_data/$file" --overwrite
         done
         for file in clientes_aml_*.csv; do
-            databricks fs cp "$file" "dbfs:/Volumes/workspace/aml_proyect/raw_data/$file" --overwrite
+            databricks fs cp "$file" "/Volumes/workspace/aml_proyect/raw_data/$file" --overwrite
         done
