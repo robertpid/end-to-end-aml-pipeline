@@ -1,8 +1,8 @@
-# AML End-to-End Pipeline: Simulación y Procesamiento de Datos
+# 🛡️ AML End-to-End Pipeline: Simulación y Procesamiento de Datos
 
-> **Cumplimiento Normativo:** Este proyecto está diseñado con un fuerte enfoque en los lineamientos del **GAFI / FATF** (Grupo de Acción Financiera Internacional) y las normativas locales peruanas como la **Resolución SBS N° 2660-2015**, implementando controles estrictos para la prevención del lavado de activos y del financiamiento del terrorismo (PLAFT).
+> ⚖️ **Cumplimiento Normativo:** Este proyecto está diseñado con un fuerte enfoque en los lineamientos del **GAFI / FATF** (Grupo de Acción Financiera Internacional) y las normativas locales peruanas como la **Resolución SBS N° 2660-2015**, implementando controles estrictos para la prevención del lavado de activos y del financiamiento del terrorismo (PLAFT).
 
-## Ciclo de Vida de los Datos (Data Flow)
+## 🔄 Ciclo de Vida de los Datos (Data Flow)
 
 ```mermaid
 graph TD
@@ -21,7 +21,7 @@ graph TD
 
 Este proyecto genera un conjunto de datos sintéticos (DataFrames de Pandas) que simula transacciones financieras y perfiles de usuarios. Estos datos están diseñados como la capa de origen (Bronze Layer) para un pipeline analítico en herramientas como Databricks y bases de datos transaccionales como Azure SQL.
 
-## Índice
+## 📑 Índice
 1. [Arquitectura y Estructura del Repositorio](#arquitectura-y-estructura-del-repositorio)
 2. [Arquitectura de Datos (Esquema Estrella)](#arquitectura-de-datos-esquema-estrella)
 3. [Estructura Orientada a Objetos (POO)](#estructura-orientada-a-objetos-poo)
@@ -35,7 +35,7 @@ Este proyecto genera un conjunto de datos sintéticos (DataFrames de Pandas) que
 
 ---
 
-## Arquitectura y Estructura del Repositorio
+## 🏗️ Arquitectura y Estructura del Repositorio
 
 El repositorio sigue un diseño modular por capas alineado con la arquitectura medallón y la automatización continua (CI/CD):
 
@@ -65,14 +65,14 @@ El repositorio sigue un diseño modular por capas alineado con la arquitectura m
 └── README.md                     # Documentación integral del proyecto
 ```
 
-## Arquitectura de Datos (Esquema Estrella)
+## 🌟 Arquitectura de Datos (Esquema Estrella)
 
 El modelo dimensional está compuesto por:
 
 1. **Dim_Cliente:** Tabla de dimensiones con datos demográficos (Edad, Ocupación y un ingreso aproximado).
 2. **Fact_Transacciones:** Tabla de hechos con los eventos transaccionales, orígenes, destinos y geografía.
 
-## Estructura Orientada a Objetos (POO)
+## 🧩 Estructura Orientada a Objetos (POO)
 
 El proyecto utiliza una clase base `PerfilFinanciero` en `capa_bronze/clases_actores.py` de la que heredan:
 - `ClienteNormal`: Tráfico y compras legítimas ("ruido blanco" o camuflaje).
@@ -80,7 +80,7 @@ El proyecto utiliza una clase base `PerfilFinanciero` en `capa_bronze/clases_act
 - `LavadorPlataformas`: Recibe múltiples micro-pagos de varias cuentas y retira sistemáticamente por debajo del límite de $10,000 USD.
 - `LavadorCrypto`: Realiza saltos ("hops") desde orígenes dispersos hacia una billetera central (Bridge) y envía el acumulado a un Exchange centralizado en cuotas.
 
-## Data Quality (Inyección de Ruido - Capa Bronce)
+## 🧹 Data Quality (Inyección de Ruido - Capa Bronce)
 
 El módulo `capa_bronze/data_quality.py` se encarga de introducir, mediante el uso de operaciones vectorizadas y NumPy, un 15% de ruido (Data Sucia). Puede generar:
 - Tipos de fecha inconsistentes (DD/MM/YYYY en vez de YYYY-MM-DD).
@@ -88,14 +88,14 @@ El módulo `capa_bronze/data_quality.py` se encarga de introducir, mediante el u
 - Identificadores PK nulos (`NaN`) inyectados mediante concatenación (*append*) para no destruir datos válidos originales.
 - Filas duplicadas transaccionales.
 
-## Pipeline Analítico (Arquitectura Medallón)
+## 🏅 Pipeline Analítico (Arquitectura Medallón)
 
 El proyecto implementa una arquitectura medallón para el procesamiento y transformación de los datos:
 
-### Capa Bronze (Raw Data)
+### 🥉 Capa Bronze (Raw Data)
 Contiene los datos crudos generados por el simulador (`capa_bronze/`), incluyendo el ruido y las inconsistencias inyectadas intencionalmente para validar los procesos de limpieza. Los datos se almacenan en bases de datos relacionales (Azure SQL) y almacenes locales.
 
-### Capa Silver (Limpieza y Estandarización)
+### 🥈 Capa Silver (Limpieza y Estandarización)
 Implementada en `capa_silver/` mediante notebooks de PySpark (`capa_plata_AML.ipynb`), esta capa procesa los datos de la capa Bronze aplicando reglas de calidad:
 - Eliminación de registros con claves primarias nulas (`PK_Transaccion`).
 - Limpieza y formateo de montos numéricos conservando precisión financiera a 2 decimales (`double`).
@@ -104,7 +104,7 @@ Implementada en `capa_silver/` mediante notebooks de PySpark (`capa_plata_AML.ip
 - Estandarización de cadenas de texto (eliminación de espacios y conversión a mayúsculas para códigos de `Moneda`).
 - Almacenamiento y actualización en formato Delta Lake utilizando operaciones `MERGE` (Upsert) dentro de la tabla gestionada en Databricks: **`transacciones_plata_robert`**.
 
-### Capa Gold (Machine Learning, Reglas de Negocio y Compliance AML)
+### 🥇 Capa Gold (Machine Learning, Reglas de Negocio y Compliance AML)
 Ubicada en `capa_gold/` (con notebook `capa_oro_AML.ipynb` para Databricks), esta capa consume directamente la tabla limpia **`transacciones_plata_robert`** y la dimensión de clientes (`Dim_Cliente`) para consolidar el valor analítico y de cumplimiento normativo mediante un enfoque híbrido:
 
 1. **Ingeniería de Características:**
@@ -130,14 +130,14 @@ Ubicada en `capa_gold/` (con notebook `capa_oro_AML.ipynb` para Databricks), est
    - **`gold_perfiles_riesgo_cliente`:** Perfil 360 del cliente con métricas agregadas, scores de riesgo y tipologías detectadas.
    - **`gold_alertas_aml`:** Detalle transaccional de operaciones alertadas para la generación de Reportes de Operaciones Sospechosas (ROS / SAR).
 
-## Nuevas Funcionalidades (Updates Recientes)
+## ✨ Nuevas Funcionalidades (Updates Recientes)
 
 - **Volumen Transaccional Realista:** La Capa Bronce ahora genera dinámicamente un número de registros aproximado (ej. de 9500 a 10500) por ejecución, aportando variabilidad realista en vez de un número estático.
 - **Protección de Data Válida:** La inyección de valores nulos se hace por anexado (*append*), asegurando que el 100% de la data legítima llegue intacta a las capas superiores.
 - **Alta Precisión Financiera:** La Capa Plata ahora convierte y procesa todos los montos a formato *Double* redondeando exactamente a dos decimales, erradicando el truncado a enteros y protegiendo información monetaria crucial.
 - **Reporte ROS Nativo en Databricks:** Se rediseñó la arquitectura de reportes. Ahora el script `reporte/generar_reporte.py` se ejecuta **nativamente como un Job/Notebook en Databricks** interactuando directamente con Spark SQL, permitiendo generar el PDF oficial del ROS consultando las capas Delta sin latencia y con data 100% verídica.
 
-## CI/CD y Automatización
+## ⚙️ CI/CD y Automatización
 
 1. **Automatización de Generación de Data (Capa Bronce):** El archivo `aml_pipeline.yml` dentro de `.github/workflows` orquesta la ejecución desatendida del simulador en **GitHub Actions**:
    - Ejecución diaria programada vía `cron`.
@@ -148,7 +148,7 @@ Ubicada en `capa_gold/` (con notebook `capa_oro_AML.ipynb` para Databricks), est
    - El pipeline orquesta en cadena: Notebook Capa Plata -> Notebook Capa Oro -> Script Generador de ROS.
    - Incluye **alertas y notificaciones por correo electrónico** ante cualquier fallo en las tareas del pipeline para garantizar una monitorización proactiva por parte del equipo de ingeniería de datos.
 
-## Despliegue y Contenerización (Docker)
+## 🐳 Despliegue y Contenerización (Docker)
 
 Todo el pipeline ha sido contenerizado utilizando Docker para garantizar la portabilidad y la reproducibilidad del entorno en cualquier máquina.
 
@@ -157,7 +157,7 @@ Todo el pipeline ha sido contenerizado utilizando Docker para garantizar la port
 3. **Gestión Unificada**: Se integró un único `requirements.txt` con todas las dependencias necesarias (`pandas`, `pyodbc`, `pyspark`, `delta-spark`, `scikit-learn`, `plotly`, `jupyterlab`).
 4. **Orquestación**: El archivo `docker-compose.yml` permite levantar el proyecto y expone un servidor de JupyterLab listo para usarse, sincronizando tu código local con el contenedor mediante volúmenes.
 
-## Configuración y Ejecución
+## 🚀 Configuración y Ejecución
 
 ### 1. Ejecución Unificada vía Docker (Recomendado)
 Para evitar conflictos de dependencias e instalación de drivers, usa el contenedor preconfigurado:
@@ -189,7 +189,7 @@ Para ejecutarlo:
 2. Asegúrate de instalar previamente las dependencias de Python (`fpdf`, `pandas`) dentro del entorno del clúster de Databricks.
 3. Ejecútalo. El PDF resultante (`Reporte_ROS_Inteligencia_Financiera.pdf`) se guardará en `/databricks/driver/` o en DBFS para que puedas descargarlo usando la UI de Databricks.
 
-## Visualización y Reportes 
+## 📊 Visualización y Reportes 
 
 ### 1. Reporte Técnico para Data Engineers
 Dentro del directorio `reporte/` encontrarás el notebook `databricks_aml_gold_analysis.ipynb`. **Este documento está diseñado y enfocado específicamente para Data Engineers y Arquitectos de Datos**. Presenta un resumen técnico completo de las decisiones de diseño del pipeline (Arquitectura Medallion, CDC, Particionamiento Estratégico, Idempotencia, Data Lineage) y utiliza visualizaciones avanzadas (Sankey, Sunburst, 3D Scatter) para demostrar cómo el sistema traza e identifica el flujo de capitales ilícitos a escala directamente desde la Capa Gold.
