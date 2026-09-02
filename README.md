@@ -196,3 +196,6 @@ Dentro del directorio `reporte/` encontrarás el notebook `databricks_aml_gold_a
 
 ### 2. Informe ROS para Analistas AML
 El nuevo script generador en el pipeline produce el documento corporativo autogenerado destinado al equipo de Prevención de Fraude, con conteo de alertas, patrones identificados e IDs de sujetos críticos. Este archivo PDF se emite diariamente luego del procesamiento en Databricks de las capas Silver y Gold.
+
+### 3. Dashboard Ejecutivo para la Gerencia (Databricks Dashboard)
+En la carpeta `reporte/` se incluye el archivo `AML_Transaction_Status_Dashboard.lvdash.json`. Este archivo corresponde a un **Dashboard Ejecutivo** nativo de Databricks (Lakeview Dashboard), enfocado a la **Gerencia y Directivos**. Proporciona una vista de alto nivel con KPIs clave, estado general del riesgo transaccional e indicadores estratégicos para la toma de decisiones empresariales. Puedes importarlo directamente en la pestaña *Dashboards* de tu entorno Databricks.
