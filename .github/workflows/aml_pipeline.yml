@@ -39,14 +39,14 @@ jobs:
     - name: Setup Databricks CLI
       uses: databricks/setup-cli@main
 
-    - name: Subir CSVs al Lakehouse (Databricks DBFS)
+    - name: Subir CSVs al Lakehouse (Databricks Volumes)
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       run: |
         for file in transacciones_aml_*.csv; do
-            databricks fs cp "$file" "dbfs:/FileStore/aml_data/$file" --overwrite
+            databricks fs cp "$file" "dbfs:/Volumes/main/aml_proyect/raw_data/$file" --overwrite
         done
         for file in clientes_aml_*.csv; do
-            databricks fs cp "$file" "dbfs:/FileStore/aml_data/$file" --overwrite
+            databricks fs cp "$file" "dbfs:/Volumes/main/aml_proyect/raw_data/$file" --overwrite
         done
