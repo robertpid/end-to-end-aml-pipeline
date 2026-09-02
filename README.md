@@ -49,7 +49,7 @@ El repositorio sigue un diseño modular por capas alineado con la arquitectura m
 │   ├── data_quality.py           # Inyección controlada de anomalías y datos sucios (15%)
 │   ├── db_connection.py          # Conector y carga de datos hacia Azure SQL Database
 │   ├── main.py                   # Orquestador principal de generación y persistencia
-│   └── requirements.txt          # Dependencias de Python para la capa bronce
+│   └── requirements.txt          # (Obsoleto) Dependencias locales de capa bronce
 ├── capa_silver/                  # Limpieza, estandarización y transformación Delta Lake
 │   └── capa_plata_AML.ipynb      # Notebook de PySpark para la capa plata
 ├── capa_gold/                    # Detección de anomalías, Machine Learning y Reglas AML
@@ -57,6 +57,10 @@ El repositorio sigue un diseño modular por capas alineado con la arquitectura m
 ├── reporte/                      # Reportes de trazabilidad y de inteligencia financiera
 │   ├── databricks_aml_gold_analysis.ipynb # Dashboard interactivo (Plotly) y Data Lineage
 │   └── generar_reporte.py        # Script/Notebook nativo para Databricks (generador de ROS en PDF)
+├── Dockerfile                    # Receta de la imagen Docker (Python 3.10, PySpark, ODBC)
+├── docker-compose.yml            # Orquestador de contenedores para entorno unificado
+├── .env.example                  # Plantilla de variables de entorno para Docker
+├── requirements.txt              # Dependencias globales unificadas para todo el proyecto
 ├── .gitignore                    # Exclusiones de control de versiones
 └── README.md                     # Documentación integral del proyecto
 ```
