@@ -6,7 +6,6 @@ import pandas as pd
 from config import TOTAL_REGISTROS_MIN, TOTAL_REGISTROS_MAX
 from clases_actores import ClienteNormal, PitufoBancario, LavadorPlataformas, LavadorCrypto
 from data_quality import inyectar_ruido
-from db_connection import obtener_engine_azure, subir_dataframe_azure
 
 # Configurar logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -39,10 +38,7 @@ def main():
     prob_normal = 1.0 - prob_sospechosos
     prob_por_lavador = prob_sospechosos / 3.0
     
-    # Obtenemos el motor de base de datos (Desactivado temporalmente por límites de Azure Free Tier)
-    engine = None # obtener_engine_azure() 
-    if not engine:
-        logger.warning("Conexión a Azure SQL desactivada. Los datos solo se guardarán en CSV para Databricks.")
+
         
     fecha_hoy_str = datetime.now().strftime("%Y%m%d")
     archivo_csv_hechos = f"transacciones_aml_{fecha_hoy_str}.csv"
@@ -97,12 +93,7 @@ def main():
             except Exception as e:
                 logger.error(f"Error al exportar los CSV en lote {lote_numero}: {e}")
 
-            # 5. Subida a Azure SQL
-            if engine:
-                modo_db = 'replace' if lote_numero == 1 else 'append'
-                # Dim_Cliente crecerá mucho, un REPLACE en la primera y APPEND después.
-                subir_dataframe_azure(df=df_clientes, nombre_tabla="Dim_Cliente", engine=engine, if_exists=modo_db)
-                subir_dataframe_azure(df=df_transacciones_ruido, nombre_tabla="Fact_Transacciones", engine=engine, if_exists=modo_db)
+
                 
             # Limpiar memoria para el siguiente lote
             transacciones_batch = []
