@@ -44,9 +44,18 @@ jobs:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       run: |
-        for file in transacciones_aml_*.csv; do
-            databricks fs cp "$file" "/Volumes/workspace/aml_proyect/raw_data/$file" --overwrite
-        done
-        for file in clientes_aml_*.csv; do
-            databricks fs cp "$file" "/Volumes/workspace/aml_proyect/raw_data/$file" --overwrite
+        for file in transacciones_aml_*.csv clientes_aml_*.csv; do
+            echo "Subiendo $file..."
+            RESPONSE=$(curl -w "\n%{http_code}" -s -X PUT "$DATABRICKS_HOST/api/2.0/fs/files/Volumes/workspace/aml_proyect/raw_data/$file?overwrite=true" \
+                 -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+                 -H "Content-Type: application/octet-stream" \
+                 --data-binary "@$file")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | head -n -1)
+            if [ "$HTTP_CODE" != "200" ]; then
+                echo "Error al subir $file. HTTP Code: $HTTP_CODE"
+                echo "Respuesta del servidor: $BODY"
+                exit 1
+            fi
+            echo "Exito al subir $file"
         done
