@@ -1,14 +1,16 @@
 version: '3.8'
 
 services:
-  aml-pipeline:
+  databricks_simulator:
     build: .
-    container_name: aml_pipeline_env
+    image: aml_pipeline_simulator
+    container_name: aml_databricks_simulator
     ports:
       - "8888:8888"
+      - "4040:4040" # Spark UI
     volumes:
-      - .:/app
-    env_file:
-      - .env
+      - .:/home/jovyan/work/  # Montar repo local para persistir cambios y tablas Delta
     environment:
-      - JUPYTER_TOKEN=aml123
+      - JUPYTER_ENABLE_LAB=yes
+      # Puedes poner aquí variables de entorno adicionales si las necesitas
+    command: start-notebook.sh --NotebookApp.token='aml_token' --NotebookApp.password=''

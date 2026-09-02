@@ -3,6 +3,8 @@
 > 🚀 **Simulación a Escala (Big Data):** Este pipeline está optimizado para replicar entornos transaccionales masivos de la vida real, siendo capaz de generar y procesar millones de transacciones por ejecución de forma dinámica de manera nativa y distribuida usando **Databricks** y **PySpark**.
 > 
 > ⚖️ **Cumplimiento Normativo:** Este proyecto está diseñado con un fuerte enfoque en los lineamientos del **GAFI / FATF** (Grupo de Acción Financiera Internacional) y las normativas locales peruanas como la **Resolución SBS N° 2660-2015**, implementando controles estrictos para la prevención del lavado de activos y del financiamiento del terrorismo (PLAFT).
+>
+> 🐳 **Portabilidad Universal con Docker:** Nuestro código puede simularse y ejecutarse en cualquier entorno de manera reproducible y sin fricciones gracias a **Docker**, asegurando que las dependencias y la configuración del ambiente sean siempre consistentes independientemente de la infraestructura subyacente.
 
 ## 🔄 Ciclo de Vida de los Datos (Data Flow)
 
@@ -118,7 +120,18 @@ Toda la lógica de transformación (Bronze -> Silver -> Gold), así como la gene
 
 ## 🚀 Configuración y Ejecución
 
-Para desplegar y ejecutar este pipeline:
+### Opción 1: Ejecución Universal con Docker (Recomendado)
+Gracias a que nuestro código está completamente conteinerizado, puede simularse en **cualquier entorno** utilizando Docker. Para ejecutar el pipeline localmente o en tu propio servidor sin configurar dependencias manualmente:
+
+1. Asegúrate de tener instalado [Docker](https://docs.docker.com/get-docker/) y Docker Compose.
+2. Construye y levanta el entorno ejecutando:
+   ```bash
+   docker-compose up -d --build
+   ```
+3. El entorno unificado se encargará de instalar los recursos y preparar todo para la simulación segura.
+
+### Opción 2: Despliegue en Databricks
+Para desplegar y ejecutar este pipeline de forma nativa en un clúster de Big Data:
 
 1. Importa los tres notebooks (`capa_bronze/capa_bronce_AML.ipynb`, `capa_silver/capa_plata_AML.ipynb`, `capa_gold/capa_oro_AML.ipynb`) en tu Workspace de Databricks.
 2. Crea un **Databricks Job (Workflow)**.

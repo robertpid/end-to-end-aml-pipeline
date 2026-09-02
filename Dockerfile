@@ -1,42 +1,33 @@
-FROM python:3.10-slim
+# Usamos la imagen oficial de Jupyter con PySpark
+FROM jupyter/pyspark-notebook:latest
 
-# Evitar prompts interactivos durante la instalación
-ENV DEBIAN_FRONTEND=noninteractive
-ENV ACCEPT_EULA=Y
+# Cambiar a root temporalmente para crear carpetas
+USER root
 
-# Instalar dependencias del SO: Java (para PySpark) y herramientas necesarias
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    gnupg2 \
-    apt-transport-https \
-    default-jre \
-    unixodbc-dev \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Crear directorio de trabajo
+WORKDIR /home/jovyan/work
 
-# Instalar el Microsoft ODBC Driver 18 for SQL Server
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends msodbcsql18 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Configurar el directorio de trabajo
-WORKDIR /app
-
-# Copiar el archivo de dependencias
+# Copiar el archivo de requirements
 COPY requirements.txt .
 
-# Instalar las dependencias de Python
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Instalar dependencias extra (Delta Lake, Faker, etc.)
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el resto del código del proyecto
-COPY . .
+# Configurar el script de inicio de IPython para inicializar Spark con Delta
+RUN mkdir -p /home/jovyan/.ipython/profile_default/startup/
+COPY scripts/00-spark-setup.py /home/jovyan/.ipython/profile_default/startup/
 
-# Exponer el puerto por defecto de Jupyter Lab
+# Ajustar permisos
+RUN chown -R jovyan:users /home/jovyan/.ipython
+
+# Volver al usuario jovyan por seguridad
+USER jovyan
+
+# Copiar el proyecto al contenedor (aunque en dev usaremos un volume)
+COPY . /home/jovyan/work/
+
+# Exponer el puerto de JupyterLab
 EXPOSE 8888
 
-# Comando por defecto para arrancar Jupyter Lab permitiendo el acceso
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token='aml123'"]
+# Comando por defecto para arrancar JupyterLab
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token='aml_token'"]
