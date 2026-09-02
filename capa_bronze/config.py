@@ -27,14 +27,3 @@ TASAS_CAMBIO = {
 TOTAL_REGISTROS_MIN = 2500000
 TOTAL_REGISTROS_MAX = 3000000
 
-# Cadena de conexión para Azure SQL
-AZURE_SQL_CONNECTION_STRING = (
-    "Driver={ODBC Driver 18 for SQL Server};"
-    "Server=tcp:sqldb-pitufeotracking-source.database.windows.net,1433;"
-    "Database=free-sql-db-9553025;"
-    "Uid=admin_robert;"
-    f"Pwd={os.getenv('AZURE_DB_PASSWORD')};"
-    "Encrypt=yes;"
-    "TrustServerCertificate=no;"
-    "Connection Timeout=30;"
-)
