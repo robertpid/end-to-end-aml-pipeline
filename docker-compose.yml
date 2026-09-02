@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  aml-pipeline:
+    build: .
+    container_name: aml_pipeline_env
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - JUPYTER_TOKEN=aml123

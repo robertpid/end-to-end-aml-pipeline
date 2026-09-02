@@ -37,3 +37,26 @@ jobs:
       env:
         AZURE_DB_PASSWORD: ${{ secrets.AZURE_DB_PASSWORD }}
       run: python capa_bronze/main.py
+
+    - name: Subir CSVs como Artefactos (Para Databricks)
+      uses: actions/upload-artifact@v4
+      with:
+        name: aml-data-csvs
+        path: |
+          transacciones_aml_*.csv
+          clientes_aml_*.csv
+
+    - name: Setup Databricks CLI
+      uses: databricks/setup-cli@main
+
+    - name: Subir CSVs al Lakehouse (Databricks DBFS)
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      run: |
+        for file in transacciones_aml_*.csv; do
+            databricks fs cp "$file" "dbfs:/FileStore/aml_data/$file" --overwrite
+        done
+        for file in clientes_aml_*.csv; do
+            databricks fs cp "$file" "dbfs:/FileStore/aml_data/$file" --overwrite
+        done
