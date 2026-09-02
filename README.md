@@ -76,7 +76,7 @@ El proyecto utiliza una simulación orientada a objetos (embebida en la Capa Bro
 
 ## 🧹 Data Quality (Inyección de Ruido - Capa Bronce)
 
-La Capa Bronce se encarga de generar los datos y de introducir un 15% de ruido (Data Sucia) utilizando User-Defined Functions (UDFs) distribuidas de Pandas/PySpark. Puede generar:
+La Capa Bronce se encarga de generar los datos y de introducir un 5% de ruido (Data Sucia) utilizando User-Defined Functions (UDFs) distribuidas de Pandas/PySpark. Puede generar:
 - Tipos de fecha inconsistentes (DD/MM/YYYY en vez de YYYY-MM-DD).
 - Errores tipográficos en la columna de monedas.
 - Identificadores PK nulos (`NaN`).
