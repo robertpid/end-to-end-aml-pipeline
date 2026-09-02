@@ -36,17 +36,27 @@ jobs:
           transacciones_aml_*.csv
           clientes_aml_*.csv
 
-    - name: Setup Databricks CLI
-      uses: databricks/setup-cli@main
-      with:
-        host: ${{ secrets.DATABRICKS_HOST }}
-        token: ${{ secrets.DATABRICKS_TOKEN }}
-
     - name: Subir CSVs al Lakehouse (Databricks Volumes)
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       run: |
         for file in transacciones_aml_*.csv; do
-          databricks fs cp "$file" "/Volumes/workspace/aml_proyect/raw_data/$file" --overwrite
+          echo "Subiendo $file..."
+          curl -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$file" \
+            "$DATABRICKS_HOST/api/2.0/fs/files/put?path=%2FVolumes%2Fworkspace%2Faml_proyect%2Fraw_data%2F$file&overwrite=true"
+          echo ""
         done
+        
         for file in clientes_aml_*.csv; do
-          databricks fs cp "$file" "/Volumes/workspace/aml_proyect/raw_data/$file" --overwrite
+          echo "Subiendo $file..."
+          curl -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$file" \
+            "$DATABRICKS_HOST/api/2.0/fs/files/put?path=%2FVolumes%2Fworkspace%2Faml_proyect%2Fraw_data%2F$file&overwrite=true"
+          echo ""
         done
