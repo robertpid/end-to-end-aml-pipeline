@@ -4,7 +4,7 @@
 > 
 > ⚖️ **Cumplimiento Normativo:** Este proyecto está diseñado con un fuerte enfoque en los lineamientos del **GAFI / FATF** (Grupo de Acción Financiera Internacional) y las normativas locales peruanas como la **Resolución SBS N° 2660-2015**, implementando controles estrictos para la prevención del lavado de activos y del financiamiento del terrorismo (PLAFT).
 >
-> 🐳 **Portabilidad Universal con Docker:** Nuestro código puede simularse y ejecutarse en cualquier entorno de manera reproducible y sin fricciones gracias a **Docker**, asegurando que las dependencias y la configuración del ambiente sean siempre consistentes independientemente de la infraestructura subyacente.
+> 🐳 **Portabilidad Universal con Docker:** Mi código puede simularse y ejecutarse en cualquier entorno de manera reproducible y sin fricciones gracias a **Docker**, asegurando que las dependencias y la configuración del ambiente sean siempre consistentes independientemente de la infraestructura subyacente.
 
 ## 🔄 Ciclo de Vida de los Datos (Data Flow)
 
@@ -55,7 +55,6 @@ El repositorio sigue un diseño modular por capas alineado con la arquitectura m
 │   └── generar_reporte.py        # Script/Notebook nativo para Databricks (generador de ROS en PDF)
 ├── Dockerfile                    # Receta de la imagen Docker (Entorno de desarrollo unificado)
 ├── docker-compose.yml            # Orquestador de contenedores para entorno unificado
-├── .env.example                  # Plantilla de variables de entorno para Docker
 ├── requirements.txt              # Dependencias globales unificadas para todo el proyecto
 ├── .gitignore                    # Exclusiones de control de versiones
 └── README.md                     # Documentación integral del proyecto
@@ -121,7 +120,7 @@ Toda la lógica de transformación (Bronze -> Silver -> Gold), así como la gene
 ## 🚀 Configuración y Ejecución
 
 ### Opción 1: Ejecución Universal con Docker (Recomendado)
-Gracias a que nuestro código está completamente conteinerizado, puede simularse en **cualquier entorno** utilizando Docker. Para ejecutar el pipeline localmente o en tu propio servidor sin configurar dependencias manualmente:
+Gracias a que mi código está completamente conteinerizado, puede simularse en **cualquier entorno** utilizando Docker. Para ejecutar el pipeline localmente o en tu propio servidor sin configurar dependencias manualmente:
 
 1. Asegúrate de tener instalado [Docker](https://docs.docker.com/get-docker/) y Docker Compose.
 2. Construye y levanta el entorno ejecutando:
